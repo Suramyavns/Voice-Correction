@@ -7,4 +7,4 @@ endpointUrl=[Endpoint to call for GPT]
 assembly=[AssemblyAI-API-KEY]
 ```
 
-Bug: Final audio does not sync with the video
+### Bug: Final audio does not sync with the video
