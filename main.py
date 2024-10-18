@@ -18,19 +18,24 @@ if apiKey and endpoint and aaiKey:
     transcriber = aai.Transcriber()
 
     st.title('Audio Correction')
-    st.header('Fixes broken audios in videos')
+    st.header('Fixes broken audios')
 
     video = st.file_uploader('Your video file',['mp4','mkv'],False,'video')    
-
-    if video is not None:
-        st.title('Preview')
-        st.video(video)
-
-        video = VideoFileClip(video.name)
+    audio = st.file_uploader('Your audio file',['mp3','wav'],False,'audio')
+    if video is not None or audio is not None:
         audio_path = "temp_audio.wav"  # Temporary audio file
+        if video is not None:
+            st.title('Preview')
+            st.video(video)
 
-        # Save the audio as WAV to a temporary file
-        video.audio.write_audiofile(audio_path, codec='pcm_s16le')
+            video = VideoFileClip(video.name)
+
+            # Save the audio as WAV to a temporary file
+            video.audio.write_audiofile(audio_path, codec='pcm_s16le')
+
+        if audio is not None:
+            audio = AudioFileClip(audio.name)
+            audio.write_audiofile(audio_path,codec='pcm_s16le')
 
         # Play the audio in Streamlit
         st.write('Extracted Audio')
@@ -43,7 +48,6 @@ if apiKey and endpoint and aaiKey:
         # Cleanup: Remove the temporary audio file
 
         if transcript and transcript.status!=aai.TranscriptStatus.error:
-            os.remove(audio_path)
             transcript=transcript.text
             st.success('Speech to Text transcription Successfull')
             headers = {
@@ -70,14 +74,18 @@ if apiKey and endpoint and aaiKey:
                     tts.save(tts_audio_path)
 
                     tts_audio = AudioFileClip(tts_audio_path)
-                    finalvid = video.set_audio(tts_audio)
-                    final='final_video.mp4'
-                    finalvid.write_videofile(final,codec='libx264')
-                    st.success('Final video created successfully!')
-                    st.video(final)
-
+                    if video:
+                        finalvid = video.set_audio(tts_audio)
+                        final='final_video.mp4'
+                        finalvid.write_videofile(final,codec='libx264')
+                        st.success('Video created successfully!')
+                        st.video(final)
+                        os.remove(final)
+                    elif audio:
+                        st.success('Audio created successfully!')
+                        st.audio(tts_audio_path)
                     os.remove(tts_audio_path)
-                    os.remove(final)
+                    os.remove(audio_path)
                 else:
                     # Handle errors if the request was not successful
                     st.error(f"Failed to connect or retrieve response: {response.status_code} - {response.text}")
